@@ -1,0 +1,15 @@
+{
+  "originHash" : "f74d28cdb7e72ec9f4e6fcde906af7f34f3c5241e557005fcbc48bc7489267bb",
+  "pins" : [
+    {
+      "identity" : "sdk-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/LooxidLabs/SDK-iOS.git",
+      "state" : {
+        "branch" : "develop",
+        "revision" : "dd145cb278b6152848ae422c58a27e766c88bb8a"
+      }
+    }
+  ],
+  "version" : 3
+}
