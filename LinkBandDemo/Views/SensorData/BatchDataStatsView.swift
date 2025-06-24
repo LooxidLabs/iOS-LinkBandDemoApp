@@ -1,15 +1,17 @@
 import SwiftUI
 // BluetoothKitViewModel import 추가 - 어댑터 사용
 
-// MARK: - Batch Data Statistics View
+// MARK: - 배치 데이터 통계 뷰
 
-/// 센서 데이터 통계를 표시하는 뷰
+/// 센서 데이터의 실시간 통계를 표시하는 뷰
+/// 연결된 각 센서의 현재 값과 연결/기록 상태를 카드 형태로 표시합니다.
 struct BatchDataStatsView: View {
+    /// Bluetooth 디바이스와 센서 데이터 관리를 담당하는 ViewModel
     @ObservedObject var bluetoothKit: BluetoothKitViewModel
     
     var body: some View {
         VStack(spacing: 16) {
-            // 헤더
+            // 헤더 영역 - 제목과 기록 상태 표시
             HStack {
                 Image(systemName: "chart.bar.fill")
                     .font(.system(size: 20))
@@ -21,6 +23,7 @@ struct BatchDataStatsView: View {
                 
                 Spacer()
                 
+                // 기록 중일 때 표시되는 인디케이터
                 if bluetoothKit.isRecording {
                     Image(systemName: "record.circle.fill")
                         .foregroundColor(.red)
@@ -30,9 +33,11 @@ struct BatchDataStatsView: View {
             
             Divider()
             
+            // 연결 상태에 따른 콘텐츠 분기
             if !bluetoothKit.isConnected {
                 emptyStateView
             } else {
+                // 센서별 통계 카드 목록 (데이터가 있는 센서만 표시)
                 LazyVStack(spacing: 12) {
                     if bluetoothKit.latestEEGReading != nil {
                         sensorStatCard(for: "EEG", icon: "brain.head.profile", color: .purple)
@@ -60,6 +65,7 @@ struct BatchDataStatsView: View {
         )
     }
     
+    /// 연결되지 않았거나 센서 데이터가 없을 때 표시되는 빈 상태 뷰
     private var emptyStateView: some View {
         VStack(spacing: 12) {
             Image(systemName: "chart.bar.xaxis")
@@ -80,9 +86,15 @@ struct BatchDataStatsView: View {
         .padding(.vertical, 20)
     }
     
+    /// 개별 센서의 통계 정보를 표시하는 카드
+    /// - Parameters:
+    ///   - sensorType: 센서 타입 문자열 (예: "EEG", "PPG")
+    ///   - icon: 센서를 나타내는 SF Symbol 이름
+    ///   - color: 센서별 테마 색상
+    /// - Returns: 센서 데이터와 상태 정보를 표시하는 카드 뷰
     private func sensorStatCard(for sensorType: String, icon: String, color: Color) -> some View {
         VStack(spacing: 12) {
-            // 센서 타입 헤더
+            // 센서 타입 헤더 - 아이콘과 이름, 데이터 타입 표시
             HStack {
                 Image(systemName: icon)
                     .font(.system(size: 16))
@@ -99,10 +111,10 @@ struct BatchDataStatsView: View {
                     .foregroundColor(.secondary)
             }
             
-            // 현재 센서 값 표시
+            // 현재 센서 값들을 그리드 형태로 표시
             sensorDataView(for: sensorType, color: color)
             
-            // 연결 상태 정보
+            // 연결 및 기록 상태 정보
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("연결 상태")
@@ -134,10 +146,16 @@ struct BatchDataStatsView: View {
         )
     }
     
+    /// 센서 타입에 따라 해당하는 센서 데이터를 그리드 형태로 표시
+    /// - Parameters:
+    ///   - sensorType: 표시할 센서 타입
+    ///   - color: 센서별 테마 색상
+    /// - Returns: 센서 데이터를 그리드로 표시하는 뷰
     @ViewBuilder
     private func sensorDataView(for sensorType: String, color: Color) -> some View {
         switch sensorType {
         case "EEG":
+            // EEG 2채널 데이터 표시
             if let eeg = bluetoothKit.latestEEGReading {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
                     StatItem(title: "CH1", value: String(format: "%.1f µV", eeg.channel1), color: color)
@@ -146,6 +164,7 @@ struct BatchDataStatsView: View {
             }
             
         case "PPG":
+            // PPG RED/IR 채널 데이터 표시
             if let ppg = bluetoothKit.latestPPGReading {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
                     StatItem(title: "Red", value: "\(ppg.red)", color: color)
@@ -154,6 +173,7 @@ struct BatchDataStatsView: View {
             }
             
         case "ACC":
+            // 가속도계 X/Y/Z축 데이터 표시
             if let accel = bluetoothKit.latestAccelerometerReading {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 8) {
                     StatItem(title: "X", value: "\(accel.x)", color: color)
@@ -163,6 +183,7 @@ struct BatchDataStatsView: View {
             }
             
         case "배터리":
+            // 배터리 잔량 데이터 표시
             if let battery = bluetoothKit.latestBatteryReading {
                 StatItem(title: "배터리", value: "\(battery.level)%", color: color)
             }
@@ -173,19 +194,26 @@ struct BatchDataStatsView: View {
     }
 }
 
-// MARK: - Stat Item Component
+// MARK: - 통계 항목 컴포넌트
 
+/// 개별 센서 값을 표시하는 작은 통계 항목 컴포넌트
+/// 제목과 값을 세로로 배치하고 센서별 테마 색상을 적용합니다.
 struct StatItem: View {
+    /// 통계 항목의 제목 (예: "CH1", "X축")
     let title: String
+    /// 표시할 센서 값
     let value: String
+    /// 테마 색상
     let color: Color
     
     var body: some View {
         VStack(spacing: 4) {
+            // 항목 제목
             Text(title)
                 .font(.caption2)
                 .foregroundColor(.secondary)
             
+            // 센서 값
             Text(value)
                 .font(.caption)
                 .fontWeight(.semibold)
@@ -205,7 +233,7 @@ struct StatItem: View {
     }
 }
 
-// MARK: - Preview
+// MARK: - 미리보기
 
 #Preview {
     BatchDataStatsView(bluetoothKit: BluetoothKitViewModel())

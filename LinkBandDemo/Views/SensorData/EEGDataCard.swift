@@ -1,14 +1,16 @@
 import SwiftUI
 
-// EEGData 타입은 BluetoothKitViewModel에 정의되어 있습니다
-// 현재 프로젝트 구조에서는 같은 모듈이므로 import가 필요하지 않아야 하는데
-// View와 ViewModel이 다른 타겟에 있을 수 있으므로 확인이 필요합니다
+// MARK: - EEG 데이터 카드
 
+/// EEG (뇌전도) 센서 데이터를 시각적으로 표시하는 카드 컴포넌트
+/// 2채널 신호값, 전극 접촉 상태를 포함하여 표시합니다.
 struct EEGDataCard: View {
+    /// 표시할 EEG 센서 데이터
     let reading: EEGData
     
     var body: some View {
         VStack(spacing: 8) {
+            // 헤더 영역 - 센서 타입과 접촉 상태 표시
             HStack {
                 Image(systemName: "brain.head.profile")
                     .foregroundColor(.purple)
@@ -17,12 +19,15 @@ struct EEGDataCard: View {
                     .font(.headline)
                     .foregroundColor(.purple)
                 Spacer()
+                // 전극 접촉 상태 인디케이터
                 Image(systemName: reading.leadOff ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                     .foregroundColor(reading.leadOff ? .red : .green)
             }
             .frame(maxWidth: .infinity)
             
+            // 데이터 표시 영역 - 2채널 신호값과 접촉 상태
             HStack(spacing: 20) {
+                // 채널 1 신호값
                 VStack {
                     Text("CH1")
                         .font(.caption)
@@ -33,6 +38,7 @@ struct EEGDataCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 
+                // 채널 2 신호값
                 VStack {
                     Text("CH2")
                         .font(.caption)
@@ -43,6 +49,7 @@ struct EEGDataCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 
+                // 전극 접촉 상태 정보
                 VStack {
                     Text("센서 접촉 상태")
                         .font(.caption)

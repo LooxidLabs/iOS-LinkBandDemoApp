@@ -1,10 +1,16 @@
 import SwiftUI
 
+// MARK: - PPG 데이터 카드
+
+/// PPG (광전 용적 맥파) 센서 데이터를 시각적으로 표시하는 카드 컴포넌트
+/// 적외선(RED)과 근적외선(IR) LED 신호값을 함께 표시하여 심박 및 혈중 산소 농도 측정에 사용됩니다.
 struct PPGDataCard: View {
+    /// 표시할 PPG 센서 데이터
     let reading: PPGData
     
     var body: some View {
         VStack(spacing: 8) {
+            // 헤더 영역 - 센서 타입과 하트 아이콘 표시
             HStack {
                 Image(systemName: "heart.fill")
                     .foregroundColor(.red)
@@ -16,7 +22,9 @@ struct PPGDataCard: View {
             }
             .frame(maxWidth: .infinity)
             
+            // 센서 신호값 표시 영역 - RED와 IR 채널
             HStack(spacing: 30) {
+                // 적외선 LED 신호값
                 VStack {
                     Text("RED")
                         .font(.caption)
@@ -27,6 +35,7 @@ struct PPGDataCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 
+                // 근적외선 LED 신호값
                 VStack {
                     Text("IR")
                         .font(.caption)
