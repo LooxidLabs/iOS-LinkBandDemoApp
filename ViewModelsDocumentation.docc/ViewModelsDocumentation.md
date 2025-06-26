@@ -1,14 +1,32 @@
-# LinkBandDemo ViewModels 기능 가이드
+# 링크밴드 SDK 어댑터 기능 가이드
 
-LinkBandDemo 앱의 ViewModel을 통한 Bluetooth 디바이스 제어 및 센서 데이터 관리
+LooxidLabs 링크밴드 디바이스와의 Bluetooth 연결 및 센서 데이터 수집과 기록을 위한 iOS SDK 어댑터 기능 가이드입니다.
+
+## Overview
+
+이 문서는 링크밴드 디바이스와 상호작용하기 위한 핵심 기능들을 설명합니다. 
+모든 기능은 ``BluetoothKitViewModel``과 ``BatchDataConfigurationViewModel``을 통해 제공되며, UI와 SDK 사이의 어댑터 역할을 합니다.
 
 ## 설정 가이드
+
+### 링크밴드 SDK 어댑터 다운받기
+
+1. 터미널을 열고 Xcode 프로젝트 루트 폴더로 이동합니다.
+2. 아래 커맨드를 복사해 붙여넣으면 SDK 어댑터가 Xcode 프로젝트 안에 자동으로 생성되고 다운로드됩니다.
+
+```bash
+git init
+git remote add origin https://github.com/LooxidLabs/SDK-iOS.git
+git config core.sparseCheckout true
+echo "SDKAdapter/" >> .git/info/sparse-checkout
+git pull origin develop
+```
 
 ### Xcode에서 추가
 
 #### 링크밴드 SDK 추가
 1. File → Add Package Dependencies...
-2. 레포지토리 URL 입력 (https://github.com/Jackorea/test_spm.git)
+2. 레포지토리 URL 입력 (https://github.com/LooxidLabs/SDK-iOS.git)
 3. Add Package 누르기
 4. [프로젝트명] → Targets → [프로젝트명] → General → Frameworks, Libraries, and Embedded Content
 5. "+" 선택 → BluetoothKit Package → BluetoothKit 선택 → Add 누르기
@@ -19,12 +37,10 @@ LinkBandDemo 앱의 ViewModel을 통한 Bluetooth 디바이스 제어 및 센서
    - Privacy - Bluetooth Always Usage Description
    - Privacy - Bluetooth Peripheral Usage Description
 
-## Overview
-
-이 문서는 LinkBandDemo 앱에서 Bluetooth 디바이스와 상호작용하기 위한 핵심 기능들을 설명합니다. 
-모든 기능은 ``BluetoothKitViewModel``을 통해 제공되며, UI와 SDK 사이의 어댑터 역할을 합니다.
-
 ## 핵심 기능
+
+> **핵심 기능들은 모두 ``BluetoothKitViewModel``만 사용합니다.**  
+> 고급 데이터 수집 기능은 별도의 ``BatchDataConfigurationViewModel``을 사용하며, 이는 [고급 설정](#고급-설정---배치-데이터-수집-코드-예시) 섹션에서 다룹니다.
 
 ### 1. Bluetooth 스캔 관리
 - ``BluetoothKitViewModel/startScanning()`` - Bluetooth 디바이스 스캔 시작
@@ -47,7 +63,7 @@ LinkBandDemo 앱의 ViewModel을 통한 Bluetooth 디바이스 제어 및 센서
 - ``BluetoothKitViewModel/disableMonitoring()`` - 센서 모니터링 중지
 - ``BluetoothKitViewModel/latestEEGReading`` - 최신 EEG 데이터
 - ``BluetoothKitViewModel/latestPPGReading`` - 최신 PPG 데이터  
-- ``BluetoothKitViewModel/latestAccelerometerReading`` - 최신 가속도계 데이터
+- ``BluetoothKitViewModel/latestAccelerometerReading`` - 최신 ACC 데이터
 - ``BluetoothKitViewModel/latestBatteryReading`` - 최신 배터리 데이터
 
 ### 5. 데이터 기록 및 저장
@@ -56,6 +72,57 @@ LinkBandDemo 앱의 ViewModel을 통한 Bluetooth 디바이스 제어 및 센서
 - ``BluetoothKitViewModel/recordingsDirectory`` - 기록 파일이 저장되는 디렉토리
 - ``BluetoothKitViewModel/recordedFiles`` - 기록된 파일 목록
 - ``BluetoothKitViewModel/isRecording`` - 현재 기록 상태 확인
+
+## BatchDataConfigurationViewModel - 고급 데이터 수집 설정
+
+``BatchDataConfigurationViewModel``은 센서별 세밀한 데이터 수집 설정을 관리하는 전용 ViewModel입니다.
+
+### 배치 데이터 수집 핵심 기능
+
+#### 1. 배치 모니터링 제어
+- ``BatchDataConfigurationViewModel/startMonitoring()`` - 배치 데이터 모니터링 시작
+- ``BatchDataConfigurationViewModel/stopMonitoring()`` - 배치 데이터 모니터링 중지
+- ``BatchDataConfigurationViewModel/isMonitoringActive`` - 현재 모니터링 상태
+
+#### 2. 센서 선택 관리
+- ``BatchDataConfigurationViewModel/updateSensorSelection(_:)`` - 모니터링할 센서 선택
+- ``BatchDataConfigurationViewModel/selectedSensors`` - 현재 선택된 센서들
+- ``BatchDataConfigurationViewModel/isSensorSelected(_:)`` - 특정 센서 선택 상태 확인
+
+#### 3. 수집 모드 설정
+- ``BatchDataConfigurationViewModel/updateCollectionMode(_:)`` - 데이터 수집 모드 변경
+- ``BatchDataConfigurationViewModel/selectedCollectionMode`` - 현재 수집 모드
+- ``CollectionModeKind`` - 수집 모드 종류 (샘플 수/시간 기반)
+
+#### 4. 센서별 상세 설정
+- **샘플 수 기반 설정:**
+  - ``BatchDataConfigurationViewModel/setSampleCount(_:for:)`` - 센서별 목표 샘플 수 설정
+  - ``BatchDataConfigurationViewModel/getSampleCount(for:)`` - 현재 설정된 샘플 수 조회
+  - ``BatchDataConfigurationViewModel/setSampleCountText(_:for:)`` - UI 텍스트 필드 값 설정
+  - ``BatchDataConfigurationViewModel/getSampleCountText(for:)`` - UI 텍스트 필드 값 조회
+
+- **시간 기반 설정:**
+  - ``BatchDataConfigurationViewModel/setSeconds(_:for:)`` - 센서별 수집 시간(초) 설정
+  - ``BatchDataConfigurationViewModel/getSeconds(for:)`` - 현재 설정된 시간(초) 조회
+  - ``BatchDataConfigurationViewModel/setMinutes(_:for:)`` - 센서별 수집 시간(분) 설정
+  - ``BatchDataConfigurationViewModel/getMinutes(for:)`` - 현재 설정된 시간(분) 조회
+
+#### 5. 유효성 검증
+- ``BatchDataConfigurationViewModel/validateSampleCount(_:for:)`` - 샘플 수 값 검증
+- ``BatchDataConfigurationViewModel/validateSeconds(_:for:)`` - 시간(초) 값 검증
+- ``BatchDataConfigurationViewModel/validateMinutes(_:for:)`` - 시간(분) 값 검증
+- ``BatchDataConfigurationViewModel/showValidationError`` - 검증 오류 UI 상태
+- ``BatchDataConfigurationViewModel/validationMessage`` - 검증 오류 메시지
+
+#### 6. 예상 값 계산
+- ``BatchDataConfigurationViewModel/getExpectedTime(for:sampleCount:)`` - 샘플 수 기반 예상 수집 시간
+- ``BatchDataConfigurationViewModel/getExpectedSamples(for:seconds:)`` - 시간 기반 예상 샘플 수
+- ``BatchDataConfigurationViewModel/getExpectedMinutes(for:sampleCount:)`` - 샘플 수 기반 예상 수집 시간(분)
+
+#### 7. 기록 중 설정 변경 처리
+- ``BatchDataConfigurationViewModel/confirmSensorChangeWithRecordingStop()`` - 기록 중지 후 센서 변경 확인
+- ``BatchDataConfigurationViewModel/cancelSensorChange()`` - 센서 변경 취소
+- ``BatchDataConfigurationViewModel/showRecordingChangeWarning`` - 기록 중 변경 경고 상태
 
 ## 코드 예시
 
@@ -372,86 +439,331 @@ struct ConnectionStatusView: View {
 }
 ```
 
-## 데이터 타입
+## 고급 설정 - 배치 데이터 수집 코드 예시
 
-### 센서 데이터 구조체
-- ``EEGData`` - EEG (뇌전도) 센서 데이터
-- ``PPGData`` - PPG (광전 용적 맥파) 센서 데이터
-- ``AccelerometerData`` - 가속도계 센서 데이터
-- ``BatteryData`` - 배터리 레벨 데이터
-
-### 설정 및 상태 타입
-- ``SensorKind`` - 센서 타입 열거형
-- ``AccelMode`` - 가속도계 모드 (원시값/움직임)
-
-## 사용 예시
-
-### 기본 워크플로우
-1. **스캔 시작**: `viewModel.startScanning()`
-2. **디바이스 목록 확인**: `viewModel.discoveredDevices`
-3. **디바이스 연결**: `viewModel.connect(to: selectedDevice)`
-4. **센서 모니터링 시작**: `viewModel.enableMonitoring()`
-5. **데이터 기록 시작**: `viewModel.startRecording()`
-6. **기록 중지**: `viewModel.stopRecording()`
-7. **모니터링 중지**: `viewModel.disableMonitoring()`
-8. **연결 해제**: `viewModel.disconnect()`
-
-### 완전한 예시 - 간단한 센서 앱
+### BatchDataConfigurationViewModel 생성 및 설정
 
 ```swift
-import SwiftUI
-
-struct SimpleSensorApp: View {
-    @StateObject private var bluetoothKit = BluetoothKitViewModel()
+struct BatchDataCollectionView: View {
+    @ObservedObject var bluetoothKit: BluetoothKitViewModel
+    @StateObject private var batchViewModel: BatchDataConfigurationViewModel
+    
+    init(bluetoothKit: BluetoothKitViewModel) {
+        self.bluetoothKit = bluetoothKit
+        // BluetoothKitViewModel에서 BatchDataConfigurationViewModel 생성
+        self._batchViewModel = StateObject(wrappedValue: bluetoothKit.createBatchDataConfigurationViewModel())
+    }
     
     var body: some View {
-        VStack(spacing: 20) {
-            // 연결 상태
-            ConnectionStatusView(bluetoothKit: bluetoothKit)
-            
-            // 스캔 및 디바이스 선택
-            if !bluetoothKit.isConnected {
-                ScanControlView(bluetoothKit: bluetoothKit)
-                DeviceListView(bluetoothKit: bluetoothKit)
-            }
-            
-            // 연결된 경우 센서 데이터 및 제어
-            if bluetoothKit.isConnected {
-                MonitoringControlView(bluetoothKit: bluetoothKit)
-                RecordingControlView(bluetoothKit: bluetoothKit)
-                SensorDataView(bluetoothKit: bluetoothKit)
-            }
+        VStack {
+            // 배치 데이터 수집 UI
         }
-        .padding()
     }
 }
 ```
 
-### 고급 설정
-배치 데이터 수집 설정은 ``BatchDataConfigurationViewModel``을 통해 관리됩니다:
-- ``BatchDataConfigurationViewModel`` - 배치 데이터 수집 설정 관리
-- ``CollectionModeKind`` - 데이터 수집 모드 (샘플 수/시간 기반)
+### 1. 배치 데이터 수집 모드 선택
+
+```swift
+struct CollectionModeView: View {
+    @ObservedObject var batchViewModel: BatchDataConfigurationViewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("수집 모드")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.secondary)
+            
+            Picker("수집 모드", selection: $batchViewModel.selectedCollectionMode) {
+                ForEach(CollectionModeKind.allCases, id: \.self) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .disabled(batchViewModel.isMonitoringActive)
+            .onChange(of: batchViewModel.selectedCollectionMode) { newMode in
+                batchViewModel.updateCollectionMode(newMode)
+            }
+        }
+    }
+}
+```
+
+### 2. 센서 선택 및 배치 모니터링
+
+```swift
+struct SensorSelectionView: View {
+    @ObservedObject var batchViewModel: BatchDataConfigurationViewModel
+    
+    private let mainSensors: [SensorKind] = [.eeg, .ppg, .accelerometer]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("모니터링할 센서 선택")
+                .font(.subheadline)
+                .fontWeight(.medium)
+            
+            HStack(spacing: 20) {
+                ForEach(mainSensors, id: \.self) { sensor in
+                    SensorToggle(sensor: sensor, batchViewModel: batchViewModel)
+                }
+            }
+            
+            // 모니터링 제어 버튼
+            HStack {
+                Button(action: {
+                    if batchViewModel.isMonitoringActive {
+                        batchViewModel.stopMonitoring()
+                    } else {
+                        batchViewModel.startMonitoring()
+                    }
+                }) {
+                    Text(batchViewModel.isMonitoringActive ? "모니터링 중지" : "모니터링 시작")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(batchViewModel.isMonitoringActive ? Color.red : Color.blue)
+                        .cornerRadius(8)
+                }
+            }
+        }
+    }
+}
+
+struct SensorToggle: View {
+    let sensor: SensorKind
+    @ObservedObject var batchViewModel: BatchDataConfigurationViewModel
+    
+    var body: some View {
+        VStack {
+            Button(action: {
+                var newSelection = batchViewModel.selectedSensors
+                if batchViewModel.isSensorSelected(sensor) {
+                    newSelection.remove(sensor)
+                } else {
+                    newSelection.insert(sensor)
+                }
+                batchViewModel.updateSensorSelection(newSelection)
+            }) {
+                VStack(spacing: 4) {
+                    Text(sensor.emoji)
+                        .font(.title2)
+                    Text(sensor.displayName)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
+                .frame(width: 60, height: 60)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(batchViewModel.isSensorSelected(sensor) ? 
+                              Color(sensor.color).opacity(0.2) : Color.gray.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(batchViewModel.isSensorSelected(sensor) ? 
+                                        Color(sensor.color) : Color.gray.opacity(0.3), lineWidth: 2)
+                        )
+                )
+            }
+            .disabled(batchViewModel.isMonitoringActive)
+        }
+    }
+}
+```
+
+### 3. 센서별 상세 설정
+
+```swift
+struct SensorConfigurationView: View {
+    @ObservedObject var batchViewModel: BatchDataConfigurationViewModel
+    let sensor: SensorKind
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(sensor.emoji)
+                Text(sensor.displayName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Spacer()
+            }
+            
+            if batchViewModel.selectedCollectionMode == .sampleCount {
+                sampleCountSetting
+            } else if batchViewModel.selectedCollectionMode == .seconds {
+                secondsSetting
+            } else {
+                minutesSetting
+            }
+        }
+        .padding()
+        .background(Color(sensor.color).opacity(0.1))
+        .cornerRadius(8)
+    }
+    
+    private var sampleCountSetting: some View {
+        HStack {
+            Text("목표 샘플 수:")
+                .font(.caption)
+            
+            TextField("샘플 수", text: sampleCountText)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .keyboardType(.numberPad)
+                .frame(width: 80)
+                .onChange(of: batchViewModel.getSampleCountText(for: sensor)) { newValue in
+                    if batchViewModel.validateSampleCount(newValue, for: sensor) {
+                        let intValue = Int(newValue) ?? 100
+                        batchViewModel.setSampleCount(intValue, for: sensor)
+                    }
+                }
+            
+            Text("예상 시간: \(String(format: "%.1f", batchViewModel.getExpectedTime(for: sensor, sampleCount: batchViewModel.getSampleCount(for: sensor))))초")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+    
+    private var secondsSetting: some View {
+        HStack {
+            Text("수집 시간:")
+                .font(.caption)
+            
+            TextField("초", text: secondsText)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .keyboardType(.numberPad)
+                .frame(width: 60)
+                .onChange(of: batchViewModel.getSecondsText(for: sensor)) { newValue in
+                    if batchViewModel.validateSeconds(newValue, for: sensor) {
+                        let intValue = Int(newValue) ?? 30
+                        batchViewModel.setSeconds(intValue, for: sensor)
+                    }
+                }
+            
+            Text("초")
+                .font(.caption)
+            
+            Text("예상 샘플: \(batchViewModel.getExpectedSamples(for: sensor, seconds: batchViewModel.getSeconds(for: sensor)))개")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+    
+    private var minutesSetting: some View {
+        HStack {
+            Text("수집 시간:")
+                .font(.caption)
+            
+            TextField("분", text: minutesText)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .keyboardType(.numberPad)
+                .frame(width: 60)
+                .onChange(of: batchViewModel.getMinutesText(for: sensor)) { newValue in
+                    if batchViewModel.validateMinutes(newValue, for: sensor) {
+                        let intValue = Int(newValue) ?? 1
+                        batchViewModel.setMinutes(intValue, for: sensor)
+                    }
+                }
+            
+            Text("분")
+                .font(.caption)
+            
+            Text("예상 샘플: \(batchViewModel.getExpectedSamplesForMinutes(for: sensor, minutes: batchViewModel.getMinutes(for: sensor)))개")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+    
+    private var sampleCountText: Binding<String> {
+        Binding(
+            get: { batchViewModel.getSampleCountText(for: sensor) },
+            set: { batchViewModel.setSampleCountText($0, for: sensor) }
+        )
+    }
+    
+    private var secondsText: Binding<String> {
+        Binding(
+            get: { batchViewModel.getSecondsText(for: sensor) },
+            set: { batchViewModel.setSecondsText($0, for: sensor) }
+        )
+    }
+    
+    private var minutesText: Binding<String> {
+        Binding(
+            get: { batchViewModel.getMinutesText(for: sensor) },
+            set: { batchViewModel.setMinutesText($0, for: sensor) }
+        )
+    }
+}
+```
+
+### 4. 유효성 검증 및 오류 처리
+
+```swift
+struct ValidationErrorView: View {
+    @ObservedObject var batchViewModel: BatchDataConfigurationViewModel
+    
+    var body: some View {
+        if batchViewModel.showValidationError {
+            HStack {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.red)
+                Text(batchViewModel.validationMessage)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                Spacer()
+                Button("확인") {
+                    batchViewModel.showValidationError = false
+                }
+                .font(.caption)
+                .buttonStyle(.bordered)
+                .tint(.red)
+            }
+            .padding()
+            .background(Color.red.opacity(0.1))
+            .cornerRadius(8)
+        }
+    }
+}
+```
+
+## 사용 예시
+
+### 기본 워크플로우
+1. **스캔 시작**: ``BluetoothKitViewModel/startScanning()``
+2. **디바이스 목록 확인**: ``BluetoothKitViewModel/discoveredDevices``
+3. **디바이스 연결**: ``BluetoothKitViewModel/connect(to:)``
+4. **센서 모니터링 시작**: ``BluetoothKitViewModel/enableMonitoring()``
+5. **데이터 기록 시작**: ``BluetoothKitViewModel/startRecording()``
+6. **기록 중지**: ``BluetoothKitViewModel/stopRecording()``
+7. **모니터링 중지**: ``BluetoothKitViewModel/disableMonitoring()``
+8. **연결 해제**: ``BluetoothKitViewModel/disconnect()``
+
+### 배치 데이터 수집 워크플로우
+1. **BatchDataConfigurationViewModel 생성**: ``BluetoothKitViewModel/createBatchDataConfigurationViewModel()``
+2. **수집 모드 선택**: ``BatchDataConfigurationViewModel/updateCollectionMode(_:)``
+3. **센서 선택**: ``BatchDataConfigurationViewModel/updateSensorSelection(_:)``
+4. **센서별 설정**: ``BatchDataConfigurationViewModel/setSampleCount(_:for:)``
+5. **배치 모니터링 시작**: ``BatchDataConfigurationViewModel/startMonitoring()``
+6. **모니터링 중지**: ``BatchDataConfigurationViewModel/stopMonitoring()``
 
 ## Topics
 
-### Bluetooth 연결 관리
+### 뷰모델
 - ``BluetoothKitViewModel``
+- ``BatchDataConfigurationViewModel``
+
+### 디바이스 관리
 - ``DeviceInfo``
 - ``DeviceConnectionState``
 
-### 센서 데이터 수신
+### 센서 데이터 타입
 - ``EEGData``
 - ``PPGData`` 
 - ``AccelerometerData``
 - ``BatteryData``
 - ``SensorKind``
 
-### 데이터 기록 및 저장
-- CSV 파일 저장 기능
-- 실시간 모니터링
-- 배치 데이터 수집
-
-### 고급 설정
-- ``BatchDataConfigurationViewModel``
+### 설정 타입
 - ``CollectionModeKind``
 - ``AccelMode``
