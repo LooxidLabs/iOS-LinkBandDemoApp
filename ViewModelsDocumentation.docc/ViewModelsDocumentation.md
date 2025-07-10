@@ -255,44 +255,292 @@ struct EEGDataCard: View {
             HStack {
                 Image(systemName: "brain.head.profile")
                     .foregroundColor(.purple)
+                    .font(.title2)
                 Text("EEG 데이터")
                     .font(.headline)
+                    .foregroundColor(.purple)
                 Spacer()
                 Image(systemName: reading.leadOff ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                     .foregroundColor(reading.leadOff ? .red : .green)
             }
+            .frame(maxWidth: .infinity)
             
             HStack(spacing: 20) {
                 VStack {
                     Text("CH1")
                         .font(.caption)
+                        .foregroundColor(.gray)
                     Text(String(format: "%.1f µV", reading.channel1))
                         .font(.title3)
                         .fontWeight(.semibold)
                 }
+                .frame(maxWidth: .infinity)
                 
                 VStack {
                     Text("CH2")
                         .font(.caption)
+                        .foregroundColor(.gray)
                     Text(String(format: "%.1f µV", reading.channel2))
                         .font(.title3)
                         .fontWeight(.semibold)
                 }
+                .frame(maxWidth: .infinity)
                 
                 VStack {
-                    Text("접촉 상태")
+                    Text("센서 접촉 상태")
                         .font(.caption)
+                        .foregroundColor(.gray)
                     Text(reading.leadOff ? "접촉 안됨" : "접촉됨")
                         .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(reading.leadOff ? .red : .green)
                 }
+                .frame(maxWidth: .infinity)
             }
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity)
         .padding()
-        .background(Color.purple.opacity(0.1))
-        .cornerRadius(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.purple.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.purple.opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 }
+
+struct PPGDataCard: View {
+    let reading: PPGData
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Image(systemName: "heart.fill")
+                    .foregroundColor(.red)
+                    .font(.title2)
+                Text("PPG 데이터")
+                    .font(.headline)
+                    .foregroundColor(.red)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+            
+            HStack(spacing: 30) {
+                VStack {
+                    Text("RED")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Text("\(reading.red)")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                
+                VStack {
+                    Text("IR")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Text("\(reading.ir)")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.red.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+}
+
+struct AccelerometerDataCard: View {
+    let reading: AccelerometerData
+    @ObservedObject var bluetoothKit: BluetoothKitViewModel
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            // 헤더 섹션
+            VStack(spacing: 8) {
+                HStack {
+                    Image(systemName: "move.3d")
+                        .foregroundColor(.blue)
+                        .font(.title2)
+                    Text("ACC")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                    Spacer()
+                }
+                
+                // 세그먼트 컨트롤 스타일의 토글
+                HStack(spacing: 0) {
+                    // 원시값 버튼
+                    Button(action: {
+                        bluetoothKit.accelerometerMode = .raw
+                    }) {
+                        Text("원시값")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(bluetoothKit.accelerometerMode == .raw ? Color.blue : Color.clear)
+                            )
+                            .foregroundColor(bluetoothKit.accelerometerMode == .raw ? .white : .blue)
+                    }
+                    .disabled(bluetoothKit.isRecording)
+                    
+                    // 움직임 버튼
+                    Button(action: {
+                        bluetoothKit.accelerometerMode = .motion
+                    }) {
+                        Text("움직임")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(bluetoothKit.accelerometerMode == .motion ? Color.blue : Color.clear)
+                            )
+                            .foregroundColor(bluetoothKit.accelerometerMode == .motion ? .white : .blue)
+                    }
+                    .disabled(bluetoothKit.isRecording)
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.blue, lineWidth: 1)
+                )
+                .opacity(bluetoothKit.isRecording ? 0.5 : 1.0)
+                
+                // 설명 텍스트
+                HStack {
+                    Text(bluetoothKit.accelerometerMode.description)
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+            }
+            
+            // 데이터 표시 섹션
+            // BluetoothKit에서 이미 모드에 따라 처리된 데이터를 그대로 표시
+            HStack(spacing: 20) {
+                VStack {
+                    Text("X축")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Text("\(reading.x)")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                }
+                .frame(maxWidth: .infinity)
+                
+                VStack {
+                    Text("Y축")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Text("\(reading.y)")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                }
+                .frame(maxWidth: .infinity)
+                
+                VStack {
+                    Text("Z축")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Text("\(reading.z)")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.blue.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+}
+
+struct BatteryDataCard: View {
+    let reading: BatteryData
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "battery.75")
+                    .foregroundColor(batteryColor)
+                Text("배터리 레벨")
+                    .font(.headline)
+                Spacer()
+                Text("\(reading.level)%")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(batteryColor)
+            }
+            .frame(maxWidth: .infinity)
+            
+            ProgressView(value: Double(reading.level), total: 100.0)
+                .progressViewStyle(LinearProgressViewStyle(tint: batteryColor))
+                .frame(maxWidth: .infinity)
+            
+            Text("마지막 업데이트: \(timeFormatter.string(from: reading.timestamp))")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.gray.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(batteryColor.opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+    
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .medium
+        return formatter
+    }
+    
+    private var batteryColor: Color {
+        if reading.level > 50 {
+            return .green
+        } else if reading.level > 20 {
+            return .orange
+        } else {
+            return .red
+        }
+    }
+}
+
+
 ```
 
 ### 4. 센서 모니터링 제어
