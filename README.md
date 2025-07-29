@@ -41,7 +41,7 @@ LooxidLabs LinkBand 디바이스와의 Bluetooth 연결 및 센서 데이터 수
 - **프레임워크**: SwiftUI
 - **아키텍처**: MVVM + Adapter Pattern
 - **Bluetooth**: BluetoothKit SDK
-- **최소 지원 버전**: iOS 14.0+
+- **최소 지원 버전**: Xcode 16.4+, iOS 18.4+, macOS 15.5+
 
 ## 프로젝트 구조
 
