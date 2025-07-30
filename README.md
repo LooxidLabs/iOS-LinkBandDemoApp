@@ -2,6 +2,10 @@
 
 LooxidLabs LinkBand 디바이스와의 Bluetooth 연결 및 센서 데이터 수집을 시연하는 iOS 데모 앱입니다.
 
+> iOS용 LinkBand SDK 사용 방법은 아래 문서를 참고하세요:  
+
+🔗 https://github.com/LooxidLabs/SDK-iOS.git
+
 ## 주요 기능
 
 ### 📡 Bluetooth 연결
