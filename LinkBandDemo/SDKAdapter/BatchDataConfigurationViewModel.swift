@@ -54,14 +54,37 @@ class BatchDataConfigurationViewModel: ObservableObject {
         isMonitoringActive = false
     }
     
+    /// 특정 센서를 선택합니다.
+    /// - Parameter sensor: 선택할 센서
+    public func selectSensor(_ sensor: SensorKind) {
+        var newSelection = selectedSensors
+        newSelection.insert(sensor)
+        updateSensorSelectionInternal(newSelection)
+    }
+    
+    /// 특정 센서를 해제합니다.
+    /// - Parameter sensor: 해제할 센서
+    public func deselectSensor(_ sensor: SensorKind) {
+        var newSelection = selectedSensors
+        newSelection.remove(sensor)
+        updateSensorSelectionInternal(newSelection)
+    }
+    
     /// 배치 모니터링할 센서 선택을 업데이트합니다.
     /// - Parameter sensors: 선택할 센서들의 집합
     /// - Note: SensorKind를 SensorType으로 변환하여 SDK에 전달하고, UI 동기화를 위해 로컬 상태도 업데이트합니다.
-    public func updateSensorSelection(_ sensors: Set<SensorKind>) {
+    private func updateSensorSelectionInternal(_ sensors: Set<SensorKind>) {
         let sdkSensors = Set(sensors.map { $0.sdkType })
         bluetoothKit.updateBatchSensorSelection(sdkSensors)
         // UI 동기화를 위해 로컬 상태도 업데이트
         selectedSensors = sensors
+    }
+    
+    /// 배치 모니터링할 센서 선택을 업데이트합니다.
+    /// - Parameter sensors: 선택할 센서들의 집합
+    /// - Note: SensorKind를 SensorType으로 변환하여 SDK에 전달하고, UI 동기화를 위해 로컬 상태도 업데이트합니다.
+    public func updateSensorSelection(_ sensors: Set<SensorKind>) {
+        updateSensorSelectionInternal(sensors)
     }
     
     /// 배치 데이터 수집 모드를 업데이트합니다.
@@ -70,7 +93,33 @@ class BatchDataConfigurationViewModel: ObservableObject {
         bluetoothKit.updateBatchCollectionMode(mode.sdkMode)
     }
     
+    /// 사용자가 경고 팝업에서 "기록 중지 후 변경"을 선택했을 때 호출됩니다.
+    /// - Note: 기록 중에 센서 선택을 변경하려 할 때 표시되는 경고 팝업의 확인 동작입니다.
+    public func confirmSensorChangeWithRecordingStop() {
+        bluetoothKit.confirmBatchSensorChangeWithRecordingStop()
+    }
+    
+    /// 사용자가 경고 팝업에서 "취소"를 선택했을 때 호출됩니다.
+    /// - Note: 기록 중에 센서 선택 변경을 취소하는 동작입니다.
+    public func cancelSensorChange() {
+        bluetoothKit.cancelBatchSensorChange()
+    }
+    
     // MARK: - Sensor Configuration Access - SensorKind 어댑터 메서드들
+    
+    /// 특정 센서의 현재 샘플 수 설정값을 반환합니다.
+    /// - Parameter sensor: 조회할 센서 타입
+    /// - Returns: 설정된 샘플 수
+    public func getSampleCount(for sensor: SensorKind) -> Int {
+        return bluetoothKit.getBatchSampleCount(for: sensor.sdkType)
+    }
+    
+    /// 특정 센서의 현재 시간(초) 설정값을 반환합니다.
+    /// - Parameter sensor: 조회할 센서 타입
+    /// - Returns: 설정된 시간(초)
+    public func getSeconds(for sensor: SensorKind) -> Int {
+        return bluetoothKit.getBatchSeconds(for: sensor.sdkType)
+    }
     
     /// 특정 센서의 샘플 수 텍스트 필드 값을 반환합니다.
     /// - Parameter sensor: 조회할 센서 타입
@@ -84,6 +133,13 @@ class BatchDataConfigurationViewModel: ObservableObject {
     /// - Returns: UI에서 표시되는 시간(초) 텍스트
     public func getSecondsText(for sensor: SensorKind) -> String {
         return bluetoothKit.getBatchSecondsText(for: sensor.sdkType)
+    }
+    
+    /// 특정 센서의 현재 분 설정값을 반환합니다.
+    /// - Parameter sensor: 조회할 센서 타입
+    /// - Returns: 설정된 시간(분)
+    public func getMinutes(for sensor: SensorKind) -> Int {
+        return bluetoothKit.getBatchMinutes(for: sensor.sdkType)
     }
     
     /// 특정 센서의 분 텍스트 필드 값을 반환합니다.
@@ -164,10 +220,96 @@ class BatchDataConfigurationViewModel: ObservableObject {
         return result.isValid
     }
     
+    // MARK: - Helper Methods - SensorKind 어댑터 메서드들
+    
+    /// 특정 센서와 샘플 수를 기준으로 예상 수집 시간을 계산합니다.
+    /// - Parameters:
+    ///   - sensor: 대상 센서 타입
+    ///   - sampleCount: 샘플 수
+    /// - Returns: 예상 수집 시간(초)
+    public func getExpectedTime(for sensor: SensorKind, sampleCount: Int) -> Double {
+        return bluetoothKit.getBatchExpectedTime(for: sensor.sdkType, sampleCount: sampleCount)
+    }
+    
+    /// 특정 센서와 시간(초)을 기준으로 예상 샘플 수를 계산합니다.
+    /// - Parameters:
+    ///   - sensor: 대상 센서 타입
+    ///   - seconds: 시간(초)
+    /// - Returns: 예상 샘플 수
+    public func getExpectedSamples(for sensor: SensorKind, seconds: Int) -> Int {
+        return bluetoothKit.getBatchExpectedSamples(for: sensor.sdkType, seconds: seconds)
+    }
+    
+    /// 특정 센서와 시간(분)을 기준으로 예상 샘플 수를 계산합니다.
+    /// - Parameters:
+    ///   - sensor: 대상 센서 타입
+    ///   - minutes: 시간(분)
+    /// - Returns: 예상 샘플 수
+    public func getExpectedSamplesForMinutes(for sensor: SensorKind, minutes: Int) -> Int {
+        return bluetoothKit.getBatchExpectedSamplesForMinutes(for: sensor.sdkType, minutes: minutes)
+    }
+    
+    /// 특정 센서와 샘플 수를 기준으로 예상 수집 시간(분)을 계산합니다.
+    /// - Parameters:
+    ///   - sensor: 대상 센서 타입
+    ///   - sampleCount: 샘플 수
+    /// - Returns: 예상 수집 시간(분)
+    public func getExpectedMinutes(for sensor: SensorKind, sampleCount: Int) -> Double {
+        return bluetoothKit.getBatchExpectedMinutes(for: sensor.sdkType, sampleCount: sampleCount)
+    }
+    
+    /// 모든 센서의 배치 설정을 기본값으로 재설정합니다.
+    public func resetToDefaults() {
+        bluetoothKit.resetBatchToDefaults()
+    }
+    
+    /// 현재 배치 설정의 요약 정보를 문자열로 반환합니다.
+    /// - Returns: 설정 요약 문자열
+    public func getConfigurationSummary() -> String {
+        return bluetoothKit.getBatchConfigurationSummary()
+    }
+    
+    /// 특정 센서가 현재 선택되어 있는지 확인합니다.
+    /// - Parameter sensor: 확인할 센서 타입
+    /// - Returns: 센서 선택 여부
+    public func isSensorSelected(_ sensor: SensorKind) -> Bool {
+        return bluetoothKit.isBatchSensorSelected(sensor.sdkType)
+    }
+    
     /// 가속도계 모드를 업데이트합니다. - AccelMode 어댑터 사용
     /// 실시간 모니터링 중에 모드 변경을 콘솔에 즉시 반영합니다.
     public func updateAccelerometerMode(_ mode: AccelMode) {
         bluetoothKit.updateBatchAccelerometerMode(mode.sdkMode)
+    }
+    
+    /// 특정 센서의 샘플 수 설정값을 업데이트합니다.
+    /// - Parameters:
+    ///   - sensor: 설정할 센서 타입
+    ///   - count: 설정할 샘플 수
+    ///   - text: UI 텍스트 필드 값 (선택사항)
+    public func updateSensorSampleCount(_ sensor: SensorKind, count: Int, text: String = "") {
+        bluetoothKit.setBatchSampleCount(count, for: sensor.sdkType)
+        setSampleCountText(text, for: sensor)
+    }
+    
+    /// 특정 센서의 시간(초) 설정값을 업데이트합니다.
+    /// - Parameters:
+    ///   - sensor: 설정할 센서 타입
+    ///   - seconds: 설정할 시간(초)
+    ///   - text: UI 텍스트 필드 값 (선택사항)
+    public func updateSensorSeconds(_ sensor: SensorKind, seconds: Int, text: String = "") {
+        bluetoothKit.setBatchSeconds(seconds, for: sensor.sdkType)
+        setSecondsText(text, for: sensor)
+    }
+    
+    /// 특정 센서의 시간(분) 설정값을 업데이트합니다.
+    /// - Parameters:
+    ///   - sensor: 설정할 센서 타입
+    ///   - minutes: 설정할 시간(분)
+    ///   - text: UI 텍스트 필드 값 (선택사항)
+    public func updateSensorMinutes(_ sensor: SensorKind, minutes: Int, text: String = "") {
+        bluetoothKit.setBatchMinutes(minutes, for: sensor.sdkType)
+        setMinutesText(text, for: sensor)
     }
     
     // MARK: - Private Methods
