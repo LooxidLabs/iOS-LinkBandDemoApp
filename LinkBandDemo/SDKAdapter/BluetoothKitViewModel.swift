@@ -180,7 +180,7 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
     // MARK: - Published Properties (UI 바인딩용)
     
     /// 스캔 중 발견된 Bluetooth 디바이스 목록
-    @Published public var discoveredDevices: [DeviceInfo] = []
+    @Published public var scannedDevices: [DeviceInfo] = []
     
     /// 현재 연결 상태의 사용자 친화적인 설명
     @Published public var connectionStatusDescription: String = "연결 안됨"
@@ -227,7 +227,12 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
     // MARK: - SDK Instance
     
     /// 실제 비즈니스 로직을 담당하는 BluetoothKit 인스턴스
-    private let bluetoothKit: BluetoothKit
+    internal let bluetoothKit: BluetoothKit
+    
+    // MARK: - Private Properties
+    
+    /// SDK에서 받은 BluetoothDevice 객체들을 저장 (연결용)
+    private var sdkDevices: [BluetoothDevice] = []
     
     // MARK: - Initialization
     
@@ -245,19 +250,19 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
     // MARK: - Public Interface (SDK 메서드들을 래핑)
     
     /// Bluetooth 디바이스 스캔을 시작합니다.
-    public func startScanning() {
-        try? bluetoothKit.startScanning()
+    public func startScan() {
+        try? bluetoothKit.startScan()
     }
     
     /// Bluetooth 디바이스 스캔을 중지합니다.
-    public func stopScanning() {
-        try? bluetoothKit.stopScanning()
+    public func stopScan() {
+        try? bluetoothKit.stopScan()
     }
     
     /// 특정 Bluetooth 디바이스에 연결합니다.
     public func connect(to device: DeviceInfo) {
-        // DeviceInfo를 BluetoothDevice로 변환해서 연결
-        if let sdkDevice = bluetoothKit.discoveredDevices.first(where: { $0.name == device.name }) {
+        // DeviceInfo에 해당하는 SDK BluetoothDevice를 찾아서 연결
+        if let sdkDevice = sdkDevices.first(where: { $0.name == device.name }) {
             try? bluetoothKit.connect(to: sdkDevice)
         }
     }
@@ -277,12 +282,6 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
         try? bluetoothKit.stopRecording()
     }
     
-    /// 기록이 저장되는 디렉토리를 가져옵니다.
-    /// - Returns: 기록 파일들이 저장되는 URL 경로
-    public var recordingsDirectory: URL {
-        return bluetoothKit.recordingsDirectory
-    }
-    
     /// 현재 디바이스에 연결되어 있는지 확인합니다.
     /// - Returns: 연결 상태 (true: 연결됨, false: 연결되지 않음)
     public var isConnected: Bool {
@@ -295,67 +294,10 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
         try? bluetoothKit.setAutoReconnect(enabled: enabled)
     }
     
-    // MARK: - Batch Data Collection Methods
-    
-    /// 시간 간격을 기준으로 배치 데이터 수집을 설정합니다.
-    /// - Parameters:
-    ///   - timeInterval: 수집 시간 간격
-    ///   - sensorType: 대상 센서 타입
-    public func setDataCollection(timeInterval: TimeInterval, for sensorType: SensorKind) {
-        try? bluetoothKit.setDataCollection(timeInterval: timeInterval, for: sensorType.sdkType)
-    }
-    
-    /// 샘플 개수를 기준으로 배치 데이터 수집을 설정합니다.
-    /// - Parameters:
-    ///   - sampleCount: 수집할 샘플 개수
-    ///   - sensorType: 대상 센서 타입
-    public func setDataCollection(sampleCount: Int, for sensorType: SensorKind) {
-        try? bluetoothKit.setDataCollection(sampleCount: sampleCount, for: sensorType.sdkType)
-    }
-    
-    /// 특정 센서의 배치 데이터 수집을 비활성화합니다.
-    /// - Parameter sensorType: 비활성화할 센서 타입
-    public func disableDataCollection(for sensorType: SensorKind) {
-        try? bluetoothKit.disableDataCollection(for: sensorType.sdkType)
-    }
-    
-    /// 모든 센서의 배치 데이터 수집을 비활성화합니다.
-    public func disableAllDataCollection() {
-        try? bluetoothKit.disableAllDataCollection()
-    }
-    
-    /// 기록 중에 선택된 센서를 업데이트합니다.
-    /// - Parameter selectedSensors: 기록할 센서들의 집합
-    public func updateRecordingSensors(_ selectedSensors: Set<SensorKind>) {
-        let sdkSensors = Set(selectedSensors.map { $0.sdkType })
-        try? bluetoothKit.updateRecordingSensors(sdkSensors)
-    }
-    
-    // MARK: - Sensor Monitoring Control
-    
-    /// 센서 모니터링을 활성화합니다.
-    /// - Note: 일반적인 실시간 모니터링을 시작합니다.
-    public func enableMonitoring() {
-        try? bluetoothKit.enableMonitoring()
-    }
-    
-    /// 센서 모니터링을 비활성화합니다.
-    /// - Note: 실시간 모니터링을 중지합니다.
-    public func disableMonitoring() {
-        try? bluetoothKit.disableMonitoring()
-    }
-    
-    /// 모니터링할 센서 타입을 설정합니다.
-    /// - Parameter sensors: 모니터링할 센서들의 집합
-    public func setSelectedSensors(_ sensors: Set<SensorKind>) {
-        let sdkSensors = Set(sensors.map { $0.sdkType })
-        try? bluetoothKit.setSelectedSensors(sdkSensors)
-    }
-    
-    /// 현재 모니터링 중인 센서 타입들을 반환합니다.
-    /// - Returns: 현재 선택된 센서들의 집합
-    public var selectedSensorTypes: Set<SensorKind> {
-        return Set(bluetoothKit.selectedSensorTypes.map { SensorKind.from($0) })
+    /// 기록이 저장되는 디렉토리를 가져옵니다.
+    /// - Returns: 기록 파일들이 저장되는 URL 경로
+    public var recordingsDirectory: URL {
+        return bluetoothKit.recordingsDirectory
     }
     
     // MARK: - BatchDataConfigurationViewModel Factory
@@ -372,7 +314,7 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
     /// SDK의 초기 상태를 ViewModel에 동기화합니다.
     private func syncInitialState() {
         // 초기값들을 SDK에서 가져와서 설정
-        discoveredDevices = bluetoothKit.discoveredDevices.map { DeviceInfo(from: $0) }
+        // scannedDevices는 delegate를 통해 업데이트되므로 여기서 설정하지 않음
         connectionStatusDescription = bluetoothKit.connectionStatusDescription
         isScanning = bluetoothKit.isScanning
         isRecording = bluetoothKit.isRecording
@@ -399,7 +341,8 @@ extension BluetoothKitViewModel {
     
     /// 디바이스 목록이 업데이트되었을 때 호출
     func bluetoothKit(_ kit: BluetoothKit, didUpdateDevices devices: [BluetoothDevice]) {
-        discoveredDevices = devices.map { DeviceInfo(from: $0) }
+        scannedDevices = devices.map { DeviceInfo(from: $0) }
+        sdkDevices = devices // SDK 디바이스 저장
     }
     
     /// 연결 상태가 변경되었을 때 호출

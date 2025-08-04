@@ -99,13 +99,13 @@ struct EnhancedStatusCardView: View {
                     .progressViewStyle(CircularProgressViewStyle(tint: .blue))
                 
                 Button("스캔 중지") {
-                    bluetoothKit.stopScanning()
+                    bluetoothKit.stopScan()
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
             } else {
                 Button("스캔 시작") {
-                    bluetoothKit.startScanning()
+                    bluetoothKit.startScan()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
@@ -140,7 +140,7 @@ struct EnhancedStatusCardView: View {
     /// 스캔으로 발견된 디바이스 목록 표시
     @ViewBuilder
     private var deviceList: some View {
-        if !bluetoothKit.discoveredDevices.isEmpty {
+        if !bluetoothKit.scannedDevices.isEmpty {
             Divider()
             
             VStack(alignment: .leading, spacing: 8) {
@@ -149,8 +149,8 @@ struct EnhancedStatusCardView: View {
                     .fontWeight(.medium)
                     .foregroundColor(.secondary)
                 
-                ForEach(0..<bluetoothKit.discoveredDevices.count, id: \.self) { index in
-                    let device = bluetoothKit.discoveredDevices[index]
+                ForEach(0..<bluetoothKit.scannedDevices.count, id: \.self) { index in
+                    let device = bluetoothKit.scannedDevices[index]
                     deviceRow(for: device)
                 }
             }

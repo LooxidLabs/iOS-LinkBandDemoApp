@@ -263,13 +263,8 @@ public struct ValidationResultWrapper {
     }
 }
 
-// MARK: - 날짜 형식 확장
-
-/// 타임스탬프 표시를 위한 DateFormatter 확장
-/// 센서 데이터의 시간 정보를 HH:mm:ss.SSS 형식으로 표시하기 위해 사용됩니다.
+// MARK: - DateFormatter Extension
 extension DateFormatter {
-    /// 밀리초 단위까지 표시하는 타임스탬프 포매터
-    /// - Format: HH:mm:ss.SSS (예: 14:30:25.123)
     static let timestamp: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
@@ -277,23 +272,5 @@ extension DateFormatter {
     }()
 }
 
-// MARK: - SDK 변환 함수 구현 위치 안내
-
-/// SDK 타입 변환 확장들의 구현 위치
-/// 
-/// 이 파일에 정의된 UI 전용 타입들과 SDK 타입들 간의 변환 확장은
-/// BluetoothKitViewModel.swift 파일에서 internal extension으로 구현됩니다.
-/// 
-/// 구현되는 변환 확장들:
-/// - EEGData ↔ EEGReading
-/// - PPGData ↔ PPGReading  
-/// - AccelerometerData ↔ AccelerometerReading
-/// - BatteryData ↔ BatteryReading
-/// - DeviceInfo ↔ BluetoothDevice
-/// - SensorKind ↔ SensorType
-/// - DeviceConnectionState ↔ ConnectionState
-/// - AccelMode ↔ AccelerometerMode
-/// - CollectionModeKind ↔ BatchDataConfigurationManager.CollectionMode
-///
-/// 이러한 분리를 통해 UI 레이어는 SDK에 직접 의존하지 않고,
-/// 어댑터 패턴을 통해 안전하게 데이터를 주고받을 수 있습니다. 
+// MARK: - 변환 함수들은 BluetoothKitViewModel에서만 internal로 사용
+// SDK 타입 변환 확장들은 BluetoothKitViewModel.swift에서 internal extension으로 구현됨 

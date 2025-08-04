@@ -35,103 +35,111 @@ struct SimplifiedBatchDataCollectionView: View {
     }
     
     var body: some View {
+        content
+            .padding()
+            .background(backgroundStyle)
+            .onTapGesture { handleBackgroundTap() }
+            .onChange(of: isTextFieldFocused) { handleFocusChange($0) }
+            .onChange(of: focusedSampleCountField) { handleSampleCountFocusChange($0) }
+            .onChange(of: focusedSecondsField) { handleSecondsFieldFocusChange($0) }
+            .onChange(of: focusedMinutesField) { handleMinutesFieldFocusChange($0) }
+            .onAppear { ensureAllFieldsHaveValues() }
+            .alert("모니터링 중지 확인", isPresented: $showStopMonitoringAlert) {
+                alertButtons
+            } message: {
+                alertMessage
+            }
+            .onChange(of: bluetoothKit.accelerometerMode) { handleAccelerometerModeChange($0) }
+    }
+    
+    // MARK: - Main Content
+    
+    private var content: some View {
         VStack(spacing: 16) {
-            // 헤더 섹션
             headerView
-            
-            // 수집 모드 선택 섹션
             collectionModeSection
-            
-            // 수집 설정 섹션 (모드에 따라 다른 UI 표시)
+            configurationContentView
+            sensorSelectionSection
+            controlButtonsSection
+        }
+    }
+    
+    private var configurationContentView: some View {
+        Group {
             if viewModel.selectedCollectionMode == .sampleCount {
                 sampleCountConfiguration
             } else {
                 durationConfiguration
             }
-            
-            // 센서 선택 섹션
-            sensorSelectionSection
-            
-            // 제어 버튼 섹션
-            controlButtonsSection
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.gray.opacity(0.1))
-                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
-        )
-        .onTapGesture {
-            // 배경 탭 시 모든 텍스트 필드 포커스 해제
-            // 사용자가 배경을 탭하면 현재 편집 중인 모든 필드의 포커스를 해제하여 입력 완료 처리
-            isTextFieldFocused = false
-            focusedSampleCountField = nil
-            focusedSecondsField = nil
-            focusedMinutesField = nil
-        }
-        .onChange(of: isTextFieldFocused) { isFocused in
-            // 포커스가 해제될 때 빈 필드들을 기본값으로 복원
-            // 전체적인 포커스 상태 변화를 감지하여 일괄 처리
-            if !isFocused {
-                restoreEmptyFieldsToDefaults()
-            }
-        }
-        .onChange(of: focusedSampleCountField) { focusedSensor in
-            // 샘플 수 텍스트 필드의 포커스 변경 처리
-            // 특정 센서의 샘플 수 필드에서 포커스가 해제되면 해당 필드만 검증
-            if focusedSensor == nil {
-                // 포커스가 해제되면 모든 샘플 수 필드 검증
-                for sensor in mainSensors {
-                    let currentValue = viewModel.getSampleCountText(for: sensor)
-                    validateAndFixSampleCount(currentValue, for: sensor)
-                }
-            }
-        }
-        .onChange(of: focusedSecondsField) { focusedSensor in
-            // 시간(초) 텍스트 필드의 포커스 변경 처리
-            // 시간 기반 모드에서 초 단위 입력 필드의 포커스 관리
-            if focusedSensor == nil {
-                // 포커스가 해제되면 모든 시간(초) 필드 검증
-                for sensor in mainSensors {
-                    let currentValue = viewModel.getSecondsText(for: sensor)
-                    validateAndFixSeconds(currentValue, for: sensor)
-                }
-            }
-        }
-        .onChange(of: focusedMinutesField) { focusedSensor in
-            // 분 텍스트 필드의 포커스 변경 처리
-            // 시간 기반 모드에서 분 단위 입력 필드의 포커스 관리
-            if focusedSensor == nil {
-                // 포커스가 해제되면 모든 분 필드 검증
-                for sensor in mainSensors {
-                    let currentValue = viewModel.getMinutesText(for: sensor)
-                    validateAndFixMinutes(currentValue, for: sensor)
-                }
-            }
-        }
-        .onAppear {
-            // 뷰가 나타날 때 모든 텍스트 필드가 기본값으로 초기화되었는지 확인
-            // 앱 시작 시나 뷰 전환 후 일관된 초기 상태 보장
-            ensureAllFieldsHaveValues()
-        }
-        .alert("모니터링 중지 확인", isPresented: $showStopMonitoringAlert) {
+    }
+    
+    private var backgroundStyle: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Color.gray.opacity(0.1))
+            .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+    }
+    
+    private var alertButtons: some View {
+        Group {
             Button("기록 및 모니터링 중지", role: .destructive) {
-                // 기록 중지 후 모니터링 중지
-                // 데이터 손실 방지를 위해 기록을 먼저 중지한 후 모니터링 중지
                 if bluetoothKit.isRecording {
                     bluetoothKit.stopRecording()
                 }
-                viewModel.stopMonitoring()
+                viewModel.stopSelectedSensors()
             }
             Button("취소", role: .cancel) { }
-        } message: {
-            Text("데이터 기록이 진행 중입니다.\n모니터링을 중지하면 기록도 함께 중지됩니다.")
         }
-        .onChange(of: bluetoothKit.accelerometerMode) { newMode in
-            // 실시간 모니터링 중에 가속도계 모드가 변경되면 콘솔 출력에 즉시 반영
-            // 가속도계 모드 변경 사항을 배치 데이터 수집 설정에도 동기화
-            viewModel.updateAccelerometerMode(newMode)
+    }
+    
+    private var alertMessage: some View {
+        Text("데이터 기록이 진행 중입니다.\n모니터링을 중지하면 기록도 함께 중지됩니다.")
+    }
+    
+    // MARK: - Event Handlers
+    
+    private func handleBackgroundTap() {
+        isTextFieldFocused = false
+        focusedSampleCountField = nil
+        focusedSecondsField = nil
+        focusedMinutesField = nil
+    }
+    
+    private func handleFocusChange(_ isFocused: Bool) {
+        if !isFocused {
+            restoreEmptyFieldsToDefaults()
         }
+    }
+    
+    private func handleSampleCountFocusChange(_ focusedSensor: SensorKind?) {
+        if focusedSensor == nil {
+            for sensor in mainSensors {
+                let currentValue = viewModel.getSampleCountText(for: sensor)
+                validateAndFixSampleCount(currentValue, for: sensor)
+            }
+        }
+    }
+    
+    private func handleSecondsFieldFocusChange(_ focusedSensor: SensorKind?) {
+        if focusedSensor == nil {
+            for sensor in mainSensors {
+                let currentValue = viewModel.getSecondsText(for: sensor)
+                validateAndFixSeconds(currentValue, for: sensor)
+            }
+        }
+    }
+    
+    private func handleMinutesFieldFocusChange(_ focusedSensor: SensorKind?) {
+        if focusedSensor == nil {
+            for sensor in mainSensors {
+                let currentValue = viewModel.getMinutesText(for: sensor)
+                validateAndFixMinutes(currentValue, for: sensor)
+            }
+        }
+    }
+    
+    private func handleAccelerometerModeChange(_ newMode: AccelMode) {
+        viewModel.updateAccelerometerMode(newMode)
     }
     
     // MARK: - View Components
@@ -175,7 +183,7 @@ struct SimplifiedBatchDataCollectionView: View {
             .disabled(viewModel.isMonitoringActive)
             .onChange(of: viewModel.selectedCollectionMode) { newMode in
                 // 모드가 변경되면 ViewModel에 전달
-                viewModel.updateCollectionMode(newMode)
+                viewModel.setCollectionMode(newMode)
             }
         }
     }
@@ -404,14 +412,14 @@ struct SimplifiedBatchDataCollectionView: View {
                         if bluetoothKit.isRecording {
                             showStopMonitoringAlert = true
                         } else {
-                            viewModel.stopMonitoring()
+                            viewModel.stopSelectedSensors()
                         }
                     }
                     .buttonStyle(.bordered)
                     .tint(.red)
                 } else {
                     Button("모니터링 시작") {
-                        viewModel.startMonitoring()
+                        viewModel.startSelectedSensors()
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(viewModel.selectedSensors.isEmpty)
