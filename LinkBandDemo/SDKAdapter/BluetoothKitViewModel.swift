@@ -2,6 +2,53 @@ import SwiftUI
 import BluetoothKit
 import Combine
 
+// MARK: - Connection Status Text Configuration
+
+/// 연결 상태별 표시 텍스트를 커스터마이징할 수 있는 구조체
+public struct ConnectionStatusTexts {
+    /// 연결 안됨 상태 텍스트
+    public var disconnected: String
+    /// 스캔 중 상태 텍스트
+    public var scanning: String
+    /// 연결 중 상태 텍스트 (디바이스 이름을 매개변수로 받음)
+    public var connecting: (String) -> String
+    /// 연결됨 상태 텍스트 (디바이스 이름을 매개변수로 받음)
+    public var connected: (String) -> String
+    /// 재연결 중 상태 텍스트 (디바이스 이름을 매개변수로 받음)
+    public var reconnecting: (String) -> String
+    /// 실패 상태 텍스트 (에러 메시지를 매개변수로 받음)
+    public var failed: (String) -> String
+    
+    /// 새로운 ConnectionStatusTexts 인스턴스를 생성합니다.
+    public init(
+        disconnected: String,
+        scanning: String,
+        connecting: @escaping (String) -> String,
+        connected: @escaping (String) -> String,
+        reconnecting: @escaping (String) -> String,
+        failed: @escaping (String) -> String
+    ) {
+        self.disconnected = disconnected
+        self.scanning = scanning
+        self.connecting = connecting
+        self.connected = connected
+        self.reconnecting = reconnecting
+        self.failed = failed
+    }
+    
+    /// 기본 한국어 텍스트를 반환하는 정적 메서드
+    public static func defaultKorean() -> ConnectionStatusTexts {
+        return ConnectionStatusTexts(
+            disconnected: "연결 안됨",
+            scanning: "스캔 중...",
+            connecting: { "\($0)에 연결 중..." },
+            connected: { "\($0)에 연결됨" },
+            reconnecting: { "\($0)에 재연결 중..." },
+            failed: { "실패: \($0)" }
+        )
+    }
+}
+
 // MARK: - SDK 변환 확장 (internal 사용)
 
 /// EEGData와 SDK EEGReading 간의 변환을 담당하는 내부 확장
@@ -185,6 +232,50 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
     /// 현재 연결 상태의 사용자 친화적인 설명
     @Published public var connectionStatusDescription: String = "연결 안됨"
     
+    // MARK: - Connection Status Text Customization
+    
+    /// 연결 상태별 표시 텍스트 설정
+    /// 
+    /// 이 프로퍼티를 수정하여 연결 상태 텍스트를 다른 언어나 스타일로 커스터마이징할 수 있습니다.
+    ///
+    /// ## 예시
+    /// ```swift
+    /// // 영어로 변경
+    /// viewModel.connectionStatusTexts = ConnectionStatusTexts(
+    ///     disconnected: "Disconnected",
+    ///     scanning: "Scanning...",
+    ///     connecting: { "Connecting to \($0)..." },
+    ///     connected: { "Connected to \($0)" },
+    ///     reconnecting: { "Reconnecting to \($0)..." },
+    ///     failed: { "Failed: \($0)" }
+    /// )
+    /// 
+    /// // 중국어로 변경
+    /// viewModel.connectionStatusTexts = ConnectionStatusTexts(
+    ///     disconnected: "未连接",
+    ///     scanning: "扫描中...",
+    ///     connecting: { "正在连接 \($0)..." },
+    ///     connected: { "已连接 \($0)" },
+    ///     reconnecting: { "重新连接 \($0)..." },
+    ///     failed: { "失败: \($0)" }
+    /// )
+    /// 
+    /// // 커스텀 스타일
+    /// viewModel.connectionStatusTexts = ConnectionStatusTexts(
+    ///     disconnected: "🔌 연결 없음",
+    ///     scanning: "🔍 디바이스 찾는 중...",
+    ///     connecting: { "⚡ \($0) 연결 시도 중..." },
+    ///     connected: { "✅ \($0) 연결 성공!" },
+    ///     reconnecting: { "🔄 \($0) 재연결 중..." },
+    ///     failed: { "❌ 오류: \($0)" }
+    /// )
+    /// ```
+    @Published public var connectionStatusTexts: ConnectionStatusTexts = .defaultKorean() {
+        didSet {
+            updateConnectionStatusDescription()
+        }
+    }
+    
     /// 라이브러리가 현재 디바이스를 스캔 중인지 여부
     @Published public var isScanning: Bool = false
     
@@ -213,7 +304,11 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
     @Published public var isBluetoothDisabled: Bool = false
     
     /// 현재 연결 상태
-    @Published public var connectionState: DeviceConnectionState = .disconnected
+    @Published public var connectionState: DeviceConnectionState = .disconnected {
+        didSet {
+            updateConnectionStatusDescription()
+        }
+    }
     
     /// 가속도계 모드 (원시값 vs 움직임)
     @Published public var accelerometerMode: AccelMode = .raw {
@@ -315,7 +410,6 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
     private func syncInitialState() {
         // 초기값들을 SDK에서 가져와서 설정
         // scannedDevices는 delegate를 통해 업데이트되므로 여기서 설정하지 않음
-        connectionStatusDescription = bluetoothKit.connectionStatusDescription
         isScanning = bluetoothKit.isScanning
         isRecording = bluetoothKit.isRecording
         isAutoReconnectEnabled = bluetoothKit.isAutoReconnectEnabled
@@ -327,6 +421,63 @@ class BluetoothKitViewModel: ObservableObject, BluetoothKitDelegate {
         isBluetoothDisabled = bluetoothKit.isBluetoothDisabled
         connectionState = DeviceConnectionState.from(bluetoothKit.connectionState)
         accelerometerMode = AccelMode.from(bluetoothKit.accelerometerMode)
+        
+        // 연결 상태 텍스트는 커스터마이징된 설정을 사용
+        updateConnectionStatusDescription()
+    }
+    
+    /// 연결 상태 텍스트를 업데이트합니다.
+    private func updateConnectionStatusDescription() {
+        connectionStatusDescription = formatConnectionStatus(connectionState)
+    }
+    
+    /// 연결 상태를 사용자 친화적인 텍스트로 변환합니다.
+    private func formatConnectionStatus(_ state: DeviceConnectionState) -> String {
+        // SDK의 원본 ConnectionState에서 디바이스 이름과 에러 정보 추출
+        let sdkState = bluetoothKit.connectionState
+        
+        switch state {
+        case .disconnected:
+            return connectionStatusTexts.disconnected
+        case .scanning:
+            return connectionStatusTexts.scanning
+        case .connecting:
+            let deviceName = extractDeviceName(from: sdkState) ?? "디바이스"
+            return connectionStatusTexts.connecting(deviceName)
+        case .connected:
+            let deviceName = extractDeviceName(from: sdkState) ?? "디바이스"
+            return connectionStatusTexts.connected(deviceName)
+        case .reconnecting:
+            let deviceName = extractDeviceName(from: sdkState) ?? "디바이스"
+            return connectionStatusTexts.reconnecting(deviceName)
+        case .failed:
+            let errorMessage = extractErrorMessage(from: sdkState) ?? "연결 오류"
+            return connectionStatusTexts.failed(errorMessage)
+        }
+    }
+    
+    /// SDK ConnectionState에서 디바이스 이름을 추출합니다.
+    private func extractDeviceName(from state: ConnectionState) -> String? {
+        switch state {
+        case .connecting(let deviceName):
+            return deviceName
+        case .connected(let deviceName):
+            return deviceName
+        case .reconnecting(let deviceName):
+            return deviceName
+        default:
+            return nil
+        }
+    }
+    
+    /// SDK ConnectionState에서 에러 메시지를 추출합니다.
+    private func extractErrorMessage(from state: ConnectionState) -> String? {
+        switch state {
+        case .failed(let error):
+            return error.localizedDescription
+        default:
+            return nil
+        }
     }
 }
 
@@ -347,7 +498,8 @@ extension BluetoothKitViewModel {
     
     /// 연결 상태가 변경되었을 때 호출
     func bluetoothKit(_ kit: BluetoothKit, didUpdateConnectionStatus status: String) {
-        connectionStatusDescription = status
+        // SDK에서 제공하는 텍스트는 무시하고, 커스터마이징된 텍스트 사용
+        // connectionState 변경 시 자동으로 updateConnectionStatusDescription()이 호출됨
     }
     
     /// 스캔 상태가 변경되었을 때 호출

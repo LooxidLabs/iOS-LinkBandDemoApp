@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		4922A2DE2E093D6100D90BA8 /* ViewModelsDocumentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 4922A2DD2E093D6100D90BA8 /* ViewModelsDocumentation.docc */; };
-		49F162212E40B0FD002D45BD /* BluetoothKit in Frameworks */ = {isa = PBXBuildFile; productRef = 49F162202E40B0FD002D45BD /* BluetoothKit */; };
+		4988BA0A2E45E6E600A0A4CA /* BluetoothKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4988BA092E45E6E600A0A4CA /* BluetoothKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,7 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				49F162212E40B0FD002D45BD /* BluetoothKit in Frameworks */,
+				4988BA0A2E45E6E600A0A4CA /* BluetoothKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,7 +127,7 @@
 			);
 			name = LinkBandDemo;
 			packageProductDependencies = (
-				49F162202E40B0FD002D45BD /* BluetoothKit */,
+				4988BA092E45E6E600A0A4CA /* BluetoothKit */,
 			);
 			productName = personal;
 			productReference = 492F1F342DDB33FD00F2D26E /* LinkBandDemo.app */;
@@ -212,7 +212,7 @@
 			mainGroup = 492F1F2B2DDB33FD00F2D26E;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				49F1621F2E40B0F7002D45BD /* XCRemoteSwiftPackageReference "SDK-iOS" */,
+				4988BA082E45E6E000A0A4CA /* XCRemoteSwiftPackageReference "SDK-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 492F1F352DDB33FD00F2D26E /* Products */;
@@ -577,7 +577,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		49F1621F2E40B0F7002D45BD /* XCRemoteSwiftPackageReference "SDK-iOS" */ = {
+		4988BA082E45E6E000A0A4CA /* XCRemoteSwiftPackageReference "SDK-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/LooxidLabs/SDK-iOS.git";
 			requirement = {
@@ -588,9 +588,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		49F162202E40B0FD002D45BD /* BluetoothKit */ = {
+		4988BA092E45E6E600A0A4CA /* BluetoothKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 49F1621F2E40B0F7002D45BD /* XCRemoteSwiftPackageReference "SDK-iOS" */;
+			package = 4988BA082E45E6E000A0A4CA /* XCRemoteSwiftPackageReference "SDK-iOS" */;
 			productName = BluetoothKit;
 		};
 /* End XCSwiftPackageProductDependency section */
