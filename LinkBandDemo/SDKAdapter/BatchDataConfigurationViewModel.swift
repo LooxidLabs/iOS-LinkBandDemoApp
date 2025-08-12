@@ -12,9 +12,6 @@ class BatchDataConfigurationViewModel: ObservableObject {
     @Published public var selectedCollectionMode: CollectionModeKind = .sampleCount
     @Published public var selectedSensors: Set<SensorKind> = [.eeg, .ppg, .accelerometer]
     @Published public var isMonitoringActive = false
-    @Published public var showRecordingChangeWarning = false
-    @Published public var pendingSensorSelection: Set<SensorKind>?
-    @Published public var pendingConfigurationChange: BatchDataConfigurationManager.PendingConfigurationChange?
     @Published public var sensorConfigurations: [SensorKind: BatchDataConfigurationManager.SensorConfiguration] = [:]
     
     // UI 전용 상태
@@ -91,18 +88,6 @@ class BatchDataConfigurationViewModel: ObservableObject {
     /// - Parameter mode: 설정할 수집 모드 (샘플 수, 시간(초), 시간(분))
     public func setCollectionMode(_ mode: CollectionModeKind) {
         bluetoothKit.updateBatchCollectionMode(mode.sdkMode)
-    }
-    
-    /// 사용자가 경고 팝업에서 "기록 중지 후 변경"을 선택했을 때 호출됩니다.
-    /// - Note: 기록 중에 센서 선택을 변경하려 할 때 표시되는 경고 팝업의 확인 동작입니다.
-    public func confirmSensorChangeWithRecordingStop() {
-        bluetoothKit.confirmBatchSensorChangeWithRecordingStop()
-    }
-    
-    /// 사용자가 경고 팝업에서 "취소"를 선택했을 때 호출됩니다.
-    /// - Note: 기록 중에 센서 선택 변경을 취소하는 동작입니다.
-    public func cancelSensorChange() {
-        bluetoothKit.cancelBatchSensorChange()
     }
     
     // MARK: - Sensor Configuration Access - SensorKind 어댑터 메서드들
@@ -319,15 +304,8 @@ class BatchDataConfigurationViewModel: ObservableObject {
         selectedCollectionMode = CollectionModeKind.from(bluetoothKit.batchSelectedCollectionMode)
         selectedSensors = Set(bluetoothKit.batchSelectedSensors.map { SensorKind.from($0) })
         isMonitoringActive = bluetoothKit.isBatchMonitoringActive
-        showRecordingChangeWarning = bluetoothKit.showBatchRecordingChangeWarning
         
         // 타입 어노테이션 명시적 지정
-        if let pendingSelection = bluetoothKit.batchPendingSensorSelection {
-            pendingSensorSelection = Set(pendingSelection.map { SensorKind.from($0) })
-        } else {
-            pendingSensorSelection = nil
-        }
-        
         // 나머지 syncInitialState 구현...
     }
 } 
