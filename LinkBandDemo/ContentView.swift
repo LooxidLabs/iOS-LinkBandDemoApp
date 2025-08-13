@@ -21,7 +21,7 @@ struct ContentView: View {
     @State private var showingRecordedFiles = false
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             ScrollView(.vertical, showsIndicators: true) {
                 LazyVStack(spacing: 20) {
                     // 디바이스 연결 상태 카드
@@ -32,12 +32,11 @@ struct ContentView: View {
                         connectedContentSections
                     }
                 }
-                .frame(maxWidth: .infinity)
                 .padding()
+                .frame(maxWidth: .infinity)
             }
-            .clipped()
             .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     filesButton
@@ -55,6 +54,7 @@ struct ContentView: View {
                 RecordedFilesView(bluetoothKit: bluetoothKitViewModel)
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle()) // iPad에서도 일관된 스타일 유지
     }
     
     // MARK: - View Components
@@ -94,9 +94,9 @@ struct ContentView: View {
     /// 연결 및 스캔 상태에 따른 동적 네비게이션 타이틀
     private var navigationTitle: String {
         switch (bluetoothKitViewModel.isConnected, bluetoothKitViewModel.isScanning) {
-        case (true, _): return "센서 모니터"
+        case (true, _): return "LinkBand 데이터"
         case (false, true): return "스캔 중..."
-        case (false, false): return "디바이스 스캐너"
+        case (false, false): return "LinkBand 블루투스 스캐너"
         }
     }
     

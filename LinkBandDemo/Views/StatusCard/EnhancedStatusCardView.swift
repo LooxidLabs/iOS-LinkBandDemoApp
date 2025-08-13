@@ -32,10 +32,10 @@ struct EnhancedStatusCardView: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    Image(systemName: connectionIcon)
-                        .font(.system(size: 20))
-                        .foregroundColor(connectionColor)
-                        .symbolEffect(.bounce, value: bluetoothKit.connectionState)
+                    Image(systemName: connectionStateIcon)
+                        .font(.title2)
+                        .foregroundColor(connectionStateColor)
+                        .scaleEffect(bluetoothKit.connectionState == .connected ? 1.2 : 1.0) // bounce 대신 연결 시 크기 변화
                 }
                 
                 // 연결된 경우 샘플링 레이트 정보 표시
@@ -72,7 +72,7 @@ struct EnhancedStatusCardView: View {
             VStack {
                 Image(systemName: "record.circle.fill")
                     .foregroundColor(.red)
-                    .symbolEffect(.pulse)
+                    .scaleEffect(1.1) // pulse 대신 약간 큰 크기로 표시
                 Text("기록")
                     .font(.caption2)
                     .fontWeight(.bold)
@@ -246,7 +246,7 @@ struct EnhancedStatusCardView: View {
     
     /// 연결 상태에 따른 아이콘 반환
     /// - Returns: 현재 연결 상태를 나타내는 SF Symbol 이름
-    private var connectionIcon: String {
+    private var connectionStateIcon: String {
         switch bluetoothKit.connectionState {
         case .disconnected:
             return "wave.3.right.circle"
@@ -265,7 +265,7 @@ struct EnhancedStatusCardView: View {
     
     /// 연결 상태에 따른 색상 반환
     /// - Returns: 현재 연결 상태를 나타내는 SwiftUI Color
-    private var connectionColor: Color {
+    private var connectionStateColor: Color {
         switch bluetoothKit.connectionState {
         case .disconnected:
             return .gray
@@ -297,7 +297,7 @@ struct DataRateIndicator: View {
             Image(systemName: icon)
                 .font(.system(size: 16))
                 .foregroundColor(hasData ? .green : .gray)
-                .symbolEffect(.pulse, value: hasData)
+                .scaleEffect(hasData ? 1.1 : 1.0) // pulse 대신 데이터 수신 시 크기 변화
             
             // 센서 제목
             Text(title)

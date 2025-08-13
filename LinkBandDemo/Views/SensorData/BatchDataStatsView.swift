@@ -27,7 +27,7 @@ struct BatchDataStatsView: View {
                 if bluetoothKit.isRecording {
                     Image(systemName: "record.circle.fill")
                         .foregroundColor(.red)
-                        .symbolEffect(.pulse)
+                        .scaleEffect(1.1) // pulse 대신 약간 큰 크기로 표시
                 }
             }
             

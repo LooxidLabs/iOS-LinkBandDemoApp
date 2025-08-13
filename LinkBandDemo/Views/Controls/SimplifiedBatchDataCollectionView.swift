@@ -161,7 +161,7 @@ struct SimplifiedBatchDataCollectionView: View {
             if bluetoothKit.isRecording {
                 Image(systemName: "record.circle.fill")
                     .foregroundColor(.red)
-                    .symbolEffect(.pulse)
+                    .scaleEffect(1.1) // pulse 대신 약간 큰 크기로 표시
             }
         }
     }
@@ -404,10 +404,10 @@ struct SimplifiedBatchDataCollectionView: View {
     
     private var controlButtonsSection: some View {
         VStack(spacing: 12) {
-            // 모니터링 컨트롤
+            // 센서 활성화 컨트롤
             HStack(spacing: 12) {
                 if viewModel.isMonitoringActive {
-                    Button("모니터링 중지") {
+                    Button("센서 비활성화") {
                         // 기록 중이면 경고 팝업 표시, 아니면 바로 중지
                         if bluetoothKit.isRecording {
                             showStopMonitoringAlert = true
@@ -418,7 +418,7 @@ struct SimplifiedBatchDataCollectionView: View {
                     .buttonStyle(.bordered)
                     .tint(.red)
                 } else {
-                    Button("모니터링 시작") {
+                    Button("센서 활성화") {
                         viewModel.startSelectedSensors()
                     }
                     .buttonStyle(.borderedProminent)
@@ -434,10 +434,10 @@ struct SimplifiedBatchDataCollectionView: View {
                 }
             }
             
-            // 기록 컨트롤 (실질적인 모니터링이 활성화된 경우에만 표시)
-            if viewModel.isMonitoringActive {
-                Divider()
-                
+            Divider()
+            
+            // 기록 컨트롤 (항상 표시, 센서 활성화 상태에 따라 활성화/비활성화)
+            VStack(spacing: 8) {
                 HStack(spacing: 12) {
                     Button(bluetoothKit.isRecording ? "기록 중지" : "기록 시작") {
                         if bluetoothKit.isRecording {
@@ -449,13 +449,15 @@ struct SimplifiedBatchDataCollectionView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(bluetoothKit.isRecording ? .red : .green)
                     .frame(maxWidth: .infinity)
+                    .disabled(!viewModel.isMonitoringActive) // 센서 활성화되어야만 기록 가능
+                    .opacity(viewModel.isMonitoringActive ? 1.0 : 0.6)
                     
                     if bluetoothKit.isRecording {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Image(systemName: "record.circle.fill")
                                     .foregroundColor(.red)
-                                    .symbolEffect(.pulse)
+                                    .scaleEffect(1.1) // pulse 대신 약간 큰 크기로 표시
                                 Text("기록 중")
                                     .font(.caption)
                                     .fontWeight(.bold)
@@ -468,12 +470,33 @@ struct SimplifiedBatchDataCollectionView: View {
                     }
                 }
                 
-                if !bluetoothKit.isRecording && viewModel.isMonitoringActive {
-                    Text("💡 센서 모니터링 중. 기록 시작 버튼을 눌러 데이터를 저장하세요.")
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 4)
+                // 상태별 안내 메시지
+                if !viewModel.isMonitoringActive {
+                    VStack(spacing: 4) {
+                        Text("💡 센서를 먼저 활성화해야 기록을 시작할 수 있습니다.")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("저장 경로 : 파일 → 나의 iPhone → LinkBandDemo")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, 4)
+                } else if !bluetoothKit.isRecording {
+                    VStack(spacing: 4) {
+                        Text("💡 센서 모니터링 중. 기록 시작 버튼을 눌러 데이터를 저장하세요.")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("저장 경로 : 파일 → 나의 iPhone → LinkBandDemo")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, 4)
                 }
             }
         }

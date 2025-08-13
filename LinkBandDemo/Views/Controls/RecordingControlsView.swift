@@ -23,7 +23,7 @@ struct RecordingControlsView: View {
                 if bluetoothKit.isRecording {
                     Image(systemName: "circle.fill")
                         .foregroundColor(.red)
-                        .symbolEffect(.pulse)
+                        .scaleEffect(1.1) // pulse 대신 약간 큰 크기로 표시
                 }
             }
             .frame(maxWidth: .infinity)

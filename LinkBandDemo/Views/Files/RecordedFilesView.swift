@@ -24,27 +24,58 @@ struct RecordedFilesView: View {
     @State private var shareItems: [Any] = []
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Group {
                 if bluetoothKit.recordedFiles.isEmpty {
                     // 기록된 파일이 없을 때 표시되는 빈 상태 뷰
-                    ContentUnavailableView(
-                        "기록 파일 없음",
-                        systemImage: "folder",
-                        description: Text("센서 데이터 기록을 시작하면 여기에 파일이 표시됩니다.")
-                    )
+                    VStack(spacing: 16) {
+                        Image(systemName: "folder")
+                            .font(.system(size: 64))
+                            .foregroundColor(.gray)
+                        
+                        VStack(spacing: 8) {
+                            Text("기록 파일 없음")
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.primary)
+                            
+                            Text("센서 데이터 기록을 시작하면 여기에 파일이 표시됩니다.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding()
                 } else {
-                    List {
-                        // 파일 목록을 날짜별로 그룹화하여 표시
-                        Section("파일") {
-                            ForEach(groupedFiles.keys.sorted().reversed(), id: \.self) { dateString in
-                                Section(dateString) {
-                                    ForEach(groupedFiles[dateString] ?? [], id: \.self) { url in
-                                        FileRowView(
-                                            url: url,
-                                            onTap: { previewFile(url) },
-                                            onShare: { shareFile(url) }
-                                        )
+                    VStack(spacing: 16) {
+                        // 저장 경로 정보 표시
+                        VStack(spacing: 8) {
+                            Text("저장 경로 : 파일 → 나의 iPhone → LinkBandDemo")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.gray.opacity(0.1))
+                        )
+                        
+                        List {
+                            // 파일 목록을 날짜별로 그룹화하여 표시
+                            Section("파일") {
+                                ForEach(groupedFiles.keys.sorted().reversed(), id: \.self) { dateString in
+                                    Section(dateString) {
+                                        ForEach(groupedFiles[dateString] ?? [], id: \.self) { url in
+                                            FileRowView(
+                                                url: url,
+                                                onTap: { previewFile(url) },
+                                                onShare: { shareFile(url) }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -52,7 +83,7 @@ struct RecordedFilesView: View {
                     }
                 }
             }
-            .navigationTitle("기록된 파일")
+            .navigationTitle("저장된 데이터 파일")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
@@ -87,6 +118,7 @@ struct RecordedFilesView: View {
                 }
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle()) // iPad에서도 일관된 스타일 유지
     }
     
     /// 파일을 날짜별로 그룹화하는 계산 프로퍼티
